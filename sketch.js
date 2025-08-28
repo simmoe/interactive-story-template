@@ -1,6 +1,3 @@
-import pages from './structure.js'
-import settings from './settings.js'
-
 // Initialiser pagesById med det samme
 let pagesById = {}
 pages.forEach(p => pagesById[p.id] = p)
@@ -17,7 +14,8 @@ let captionBar, captionText, timerFill, pageHeading, pageButton
 let canvas
 
 let activeAudio = null
-let activeOverlayVideo = null
+let activeOverlayVideo = null; // p5.MediaElement
+let overlayVideoAlpha = 0;
 
 let userInteracted = false
 
@@ -28,31 +26,6 @@ function setupDomBindings(){
   pageHeading = select('#pageHeading')
   pageButton = select('#pageButton')
   console.log('DOM bindings sat:', {captionBar, captionText, timerFill, pageHeading, pageButton})
-
-  // Aktiver medieafspilning ved første interaktion
-  function unlockMedia(){
-    if (!userInteracted) {
-      userInteracted = true
-      if (typeof getAudioContext === 'function') {
-        getAudioContext().resume()
-      }
-      // Forsøg at resume alle videoer
-      const vids = document.querySelectorAll('video')
-      vids.forEach(v => {
-        try { v.muted = false } catch(e){}
-      })
-      console.log('Medieafspilning aktiveret')
-    }
-  }
-  window.addEventListener('mousedown', unlockMedia, { once: true })
-  window.addEventListener('touchstart', unlockMedia, { once: true })
-  window.addEventListener('keydown', unlockMedia, { once: true })
-
-  pageButton.mousePressed(() => {
-    if (!current || !current.button || !current.button.action) return
-    console.log('Knap trykket, går til:', current.button.action)
-    goto(current.button.action)
-  })
 }
 
 function preload(){
@@ -101,12 +74,12 @@ function draw(){
     return
   }
 
-  // overlay for active hotspot
+  // overlay for active hotspot image
   if (activeHotspot && activeOverlayImg){
-    push()
-    noStroke()
-    const a = constrain(overlayAlpha, 0, 255)
-    tint(255, a)
+    push();
+    noStroke();
+    const a = constrain(overlayAlpha, 0, 255);
+    tint(255, a);
     // mask to region
     let x = activeHotspot.x, y = activeHotspot.y
     if (x <= 1 && y <= 1) {
@@ -123,10 +96,14 @@ function draw(){
       if (hH && hH <= 1) hH = hH * height
       image(activeOverlayImg, x, y, w, hH)
     }
-    pop()
+    pop();
+    overlayAlpha = lerp(overlayAlpha, 255, 0.08);
+  }
 
-    // fade overlay alpha
-    overlayAlpha = lerp(overlayAlpha, 255, 0.08)
+  // overlay for active hotspot video
+  if (activeHotspot && activeOverlayVideo){
+    const params = activeOverlayVideo._drawParams || { x: 0, y: 0, w: 320, h: 180 };
+    image(activeOverlayVideo, params.x, params.y, params.w, params.h);
   }
 
   // update timer UI for active hotspot
@@ -145,6 +122,7 @@ function draw(){
       }
     }
   }
+
 }
 
 function enterPage(id){
@@ -154,17 +132,6 @@ function enterPage(id){
   overlayAlpha = 0
   console.log('enterPage:', id, current)
 
-  if (!current) {
-    // If page id is invalid, clear UI and return
-    pageHeading.html('')
-    pageButton.addClass('hide')
-    hideCaption()
-    console.warn('Ingen side med id:', id)
-    return
-  }
-
-  // heading
-  pageHeading.removeClass('hide')
   if (current.heading){
     pageHeading.html(current.heading)
     console.log('Sætter heading:', current.heading)
@@ -175,10 +142,10 @@ function enterPage(id){
   }
 
   // button
-  pageButton.removeClass('hide')
   if (current.button && current.button.text){
     pageButton.html(current.button.text)
     console.log('Sætter knap:', current.button.text)
+    pageButton.mousePressed(() => goto(current.button.action))
   } else {
     pageButton.addClass('hide')
     console.log('Ingen knap på denne side')
@@ -218,6 +185,7 @@ function stopAllMedia(){
 }
 
 function startFilmSession(f){
+  console.log('trying to start video')
   const video = createVideo([f.video], () => {
     video.loop = false
   }, () => {
@@ -248,6 +216,7 @@ function startFilmSession(f){
 }
 
 function renderFilm(){
+  console.log('render film')
   if (!filmSession) return
   // ensure video element fits
   // (already sized to canvasWrap; letting DOM handle it)
@@ -304,11 +273,13 @@ function showCaption(t=''){
   captionText.html(t || '')
   captionBar.removeClass('hide')
   timerFill.elt.style.width = '0%'
+  showFooter(); // Show footer when caption is shown
 }
 
 function hideCaption(){
   captionBar.addClass('hide')
   timerFill.elt.style.width = '0%'
+  hideFooter(); // Hide footer when caption is hidden
 }
 
 function startTimerUi(){
@@ -326,33 +297,34 @@ function activateHotspot(h){
   showCaption(h.text || '')
 
   // overlay image if provided
-  activeOverlayImg = null
+  activeOverlayImg = null;
   if (h.media && h.media.overlay){
-    loadImageSafe(h.media.overlay, img => { activeOverlayImg = img })
+    loadImageSafe(h.media.overlay, img => { activeOverlayImg = img });
   }
 
   // overlay video if provided
-  if (h.media && h.media.video){
-    if (activeOverlayVideo) {
-      activeOverlayVideo.remove()
-      activeOverlayVideo = null
-    }
-    let x = h.x, y = h.y, w = h.w, hH = h.h
-    if (x <= 1 && y <= 1) {
-      x = percentToPixel(x, 'x')
-      y = percentToPixel(y, 'y')
-      if (w && w <= 1) w = w * width
-      if (hH && hH <= 1) hH = hH * height
-    }
-    activeOverlayVideo = createVideo([h.media.video])
-    activeOverlayVideo.size(w || 320, hH || 180)
-    activeOverlayVideo.position(x, y)
-    activeOverlayVideo.style('z-index', '10')
-    activeOverlayVideo.show()
-    activeOverlayVideo.volume(1)
-    activeOverlayVideo.play()
+  if (activeOverlayVideo) {
+    activeOverlayVideo.stop();
+    activeOverlayVideo.remove();
+    activeOverlayVideo = null;
   }
-
+  if (h.media && h.media.video){
+    // Beregn position og størrelse
+    let x = h.x, y = h.y, w = h.w, hH = h.h;
+    if (x <= 1 && y <= 1) {
+      x = percentToPixel(x, 'x');
+      y = percentToPixel(y, 'y');
+      if (w && w <= 1) w = w * width;
+      if (hH && hH <= 1) hH = hH * height;
+    }
+    activeOverlayVideo = createVideo(h.media.video, ()=>{
+      activeOverlayVideo.size(w || 320, hH || 180);
+      activeOverlayVideo.play();
+      activeOverlayVideo.hide();
+    });
+    // Gem params til draw
+    activeOverlayVideo._drawParams = { x, y, w: w || 320, h: hH || 180 };
+  }
   // audio if provided
   if (h.media && h.media.audio){
     if (activeAudio) {
@@ -373,10 +345,6 @@ function deactivateHotspot(){
   if (activeAudio) {
     activeAudio.stop()
     activeAudio = null
-  }
-  if (activeOverlayVideo) {
-    activeOverlayVideo.remove()
-    activeOverlayVideo = null
   }
 }
 
@@ -457,8 +425,17 @@ function drawHotspotDebug(hotspots) {
   pop()
 }
 
-window.setup = setup
-window.draw = draw
-window.windowResized = windowResized
-window.mouseMoved = mouseMoved
-window.mousePressed = mousePressed
+function showFooter() {
+  select('footer').addClass('footer-active');
+}
+
+function hideFooter() {
+  select('footer').removeClass('footer-active');
+}
+
+
+function touchStarted() {
+   if (getAudioContext().state !== 'running') {
+     getAudioContext().resume();
+   }
+}

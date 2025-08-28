@@ -36,7 +36,7 @@
   Bemærk: Ingen logik her – kun data. En visningsmotor kan senere parse disse felter.
 */
 
-export const pages = [
+pages = [
   // ------------------------
   // Side 1 – Anslag (Forsiden)
   // ------------------------
@@ -91,9 +91,9 @@ export const pages = [
       },
       {
         type: 'hotspot',
-        x: 0.9, y: 0.3, w: 0.22, h: 0.14, // 900/1000, 300/750, 220/1000, 140/750
+        x: 0.7, y: 0.2, w: 0.22, h: 0.14, // 900/1000, 300/750, 220/1000, 140/750
         text: 'TV\'et flimrer',
-        media: { video: './assets/newsclip.mp4' },
+        media: { video: './assets/earth.mp4' },
         duration: 4000,
         action: '#deroute',
         timeoutAction: '#deroute',
@@ -187,7 +187,7 @@ export const pages = [
     title: 'Overvågning',
     background: './assets/office.png',
     film: {
-      video: './assets/dummy.mp4',
+      video: './assets/newsclip.mp4',
       duration: 7000,
       text: 'Optagelsen stopper. Hvad gør du?',
       action: '#page3',
@@ -206,4 +206,3 @@ export const pages = [
   - Hotspots er rene data: text, media, duration, action, timeoutAction og enkel meta; film-sider bruger samme CLICK/TIMEOUT-princip.
 */
 
-export default pages
