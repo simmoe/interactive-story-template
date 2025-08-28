@@ -1,0 +1,107 @@
+:root{
+  --bg: #0b0c10;
+  --panel: #11131a;
+  --ink: #e6e7ea;
+  --muted: #9aa0aa;
+  --accent: #4ea1ff;
+  --accent-weak: #256fda;
+  --danger: #ff4e69;
+}
+
+*{ box-sizing: border-box }
+
+html, body{
+  margin:0;
+  padding:0;
+  height:100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji","Segoe UI Emoji";
+}
+
+#app{
+  min-height:100vh;
+  display:grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+#header{
+  display:grid;
+  grid-template-columns: 1fr auto;
+  align-items:center;
+  gap:1rem;
+  padding:1rem clamp(1rem, 4vw, 2rem);
+}
+
+#pageHeading{
+  margin:0;
+  font-size: clamp(1.4rem, 3.5vw, 2.6rem);
+  text-align:center;
+}
+
+#pageButton{
+  justify-self:end;
+  padding: .6rem 1rem;
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--ink);
+  border-radius: 999px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform .08s ease;
+}
+#pageButton:hover{ transform: translateY(-1px) }
+#pageButton:active{ transform: translateY(0) }
+#pageButton.primary{ border-color: var(--accent); }
+
+#stage{
+  display:grid;
+  place-items: center;
+  padding: 0 clamp(0.5rem, 3vw, 2rem);
+}
+
+#canvasWrap{
+  width: min(96vw, 1280px);
+  aspect-ratio: 16/9;
+  background: #0f1117;
+  border: 1px solid #1e2230;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.02), 0 20px 60px rgba(0,0,0,.5);
+}
+
+/* caption + timer */
+#captionBar{
+  display:grid;
+  gap:.5rem;
+  padding: .8rem clamp(1rem, 4vw, 2rem) 1.2rem;
+  background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.25) 14%, rgba(0,0,0,.5) 100%);
+}
+
+#captionText{
+  min-height: 2.2rem;
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  color: var(--ink);
+  text-align:center;
+}
+
+#timerBar{
+  width: 100%;
+  height: .5rem;
+  background: #0e1420;
+  border-radius: 999px;
+  overflow: hidden;
+  outline: 1px solid rgba(255,255,255,.06);
+}
+
+#timerFill{
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-weak), var(--accent));
+  transition: width .06s linear;
+}
+
+.hide {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}

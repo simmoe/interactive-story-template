@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="da">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Interaktiv historie – template</title>
+    <link rel="stylesheet" href="./style.css">
+  </head>
+  <body>
+    <div id="app">
+      <header id="header">
+        <h1 id="pageHeading"></h1>
+        <button id="pageButton" class="primary"></button>
+      </header>
+
+      <main id="stage">
+        <div id="canvasWrap">
+          <!-- p5 canvas injects here -->
+        </div>
+      </main>
+
+      <footer id="captionBar" hidden>
+        <div id="captionText"></div>
+        <div id="timerBar">
+          <div id="timerFill"></div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- p5 core -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.10/lib/addons/p5.sound.min.js"></script>
+
+    <!-- app -->
+    <script type="module" src="./sketch.js"></script>
+  </body>
+</html>
