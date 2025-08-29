@@ -72,9 +72,9 @@ pages = [
     hotspots: [
       {
         type: 'hotspot',
-        x: 0.3, y: 0.5, w: 0.14, h: 0.07, // 300/1000, 500/750, 140/1000, 70/750
+        x: 0.3, y: 0.1, w: 0.14, h: 0.07, // 300/1000, 500/750, 140/1000, 70/750
         text: 'Skuffen knirker åben',
-        media: { image: './assets/dummy.png' },
+        media: { video: './assets/stairs.mov' },
         duration: 2500,
         action: '#page3',
         timeoutAction: '#page3',
@@ -82,7 +82,7 @@ pages = [
       },
       {
         type: 'hotspot',
-        x: 0.6, y: 0.42, w: 0.18, h: 0.09, // 600/1000, 420/750, 180/1000, 90/750
+        x: 0.3, y: 0.55, w: 0.25, h: 0.2, // 600/1000, 420/750, 180/1000, 90/750
         text: 'Papirerne rasler',
         media: { image: './assets/dummy.png' },
         duration: 2500,
@@ -92,7 +92,7 @@ pages = [
       },
       {
         type: 'hotspot',
-        x: 0.7, y: 0.2, w: 0.22, h: 0.14, // 900/1000, 300/750, 220/1000, 140/750
+        x: 0.6, y: 0.32, w: 0.16, h: 0.16, // 900/1000, 300/750, 220/1000, 140/750
         text: 'TV\'et flimrer',
         media: { video: './assets/earth.mp4' },
         duration: 4000,
@@ -186,11 +186,11 @@ pages = [
   {
     id: '#deroute',
     title: 'Overvågning',
-    background: './assets/office.png',
     film: {
-      video: './assets/newsclip.mp4',
-      duration: 7000,
-      text: 'Optagelsen stopper. Hvad gør du?',
+      video: './assets/stairs.mov',
+      videoDuration: 7000,
+      duration: 3000,
+      text: 'Du synes du mærker noget bag dig. Vend dig om og se?',
       action: '#page3',
       timeoutAction: '#page2'
     },

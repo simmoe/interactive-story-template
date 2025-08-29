@@ -1,3 +1,4 @@
+let startPage = "#page1"
 // Initialiser pagesById med det samme
 let pagesById = {}
 pages.forEach(p => pagesById[p.id] = p)
@@ -16,6 +17,7 @@ let canvas
 let activeAudio = null // hotspot-lyd
 let activeBackgroundAudio = null // backgroundsound
 let activeOverlayVideo = null; // p5.MediaElement
+let activeBackgroundVideo = null; // p5.MediaElement
 let overlayVideoAlpha = 0;
 
 let userInteracted = false
@@ -44,8 +46,8 @@ function setup(){
   canvas.parent('canvasWrap')
 
   setupDomBindings()
-  enterPage('#page1')
-  })
+  enterPage(startPage)
+  });
 }
 
 function windowResized(){
@@ -74,9 +76,8 @@ function draw(){
   }
 
   // film mode
-  if (filmSession){
-    renderFilm()
-    return
+  if (activeBackgroundVideo){
+      image(activeBackgroundVideo, 0, 0, width, height)
   }
 
   // overlay for active hotspot image
@@ -127,6 +128,19 @@ function draw(){
       }
     }
   }
+    // update timer UI for film prompt
+  if (filmSession && filmSession.promptVisible && filmSession.duration > 0){
+    const elapsed = millis() - filmSession.start
+    const dur = filmSession.duration
+    const pct = constrain(elapsed / dur, 0, 1)
+    timerFill.elt.style.width = (pct * 100).toFixed(2) + '%'
+    if (pct >= 1){
+      // timeout path for film
+      filmSession.promptVisible = false
+      hideCaption()
+      if (filmSession.spec.timeoutAction) goto(filmSession.spec.timeoutAction)
+    }
+  }
 }
 
 function enterPage(id){
@@ -148,6 +162,7 @@ function enterPage(id){
 
   if (current.heading){
     pageHeading.html(current.heading)
+    pageHeading.removeClass('hide')
     console.log('Sætter heading:', current.heading)
   } else {
     pageHeading.html('')
@@ -158,6 +173,7 @@ function enterPage(id){
   // button
   if (current.button && current.button.text){
     pageButton.html(current.button.text)
+    pageButton.removeClass('hide')
     console.log('Sætter knap:', current.button.text)
     pageButton.mousePressed(() => goto(current.button.action))
   } else {
@@ -168,18 +184,22 @@ function enterPage(id){
   // caption hidden by default
   hideCaption()
 
-  // load background image (lazy)
-  console.log('Loader baggrundsbillede:', current.background)
-  loadImageSafe(current.background, img => {
-    current._bg = img
-    console.log('Baggrundsbillede loaded:', img)
-  })
+  if(current.background){
+    // load background image (lazy)
+    console.log('Loader baggrundsbillede:', current.background)
+    loadImageSafe(current.background, img => {
+      current._bg = img
+      console.log('Baggrundsbillede loaded:', img)
+    })
+  }else{
+    console.log('Intet bagrundsbillede her')
+  }
 
   // start backgroundsound hvis property findes
   if (current.backgroundSound) {
     console.log('forsøger at starte baggrundslyd')
     activeBackgroundAudio = loadSound(current.backgroundSound, () => {
-      activeBackgroundAudio.setLoop(true)
+      activeBackgroundAudio.setLoop(true) 
       activeBackgroundAudio.play()
     })
   }
@@ -187,9 +207,27 @@ function enterPage(id){
   // start film if present
   if (current.film){
     console.log('Starter film:', current.film)
-    startFilmSession(current.film)
+    activeBackgroundVideo = createVideo(current.film.video, ()=>{
+      activeBackgroundVideo.size(640, 360);
+      activeBackgroundVideo.play();
+      activeBackgroundVideo.hide();
+      setTimeout(() => {
+        showCaption(current.film.text)
+        startTimerUi()
+          // Start film-timer-session
+          filmSession = {
+            start: millis(),
+            duration: current.film.duration || 0,
+            spec: current.film,
+            promptVisible: true
+          }
+      }, current.film.videoDuration)
+    })
+  }else{
+    activeBackgroundVideo = null
   }
 }
+
 
 function goto(id){
   if (!id) return
@@ -216,69 +254,6 @@ function stopAllMedia(){
   }
 }
 
-function startFilmSession(f){
-  console.log('trying to start video')
-  const video = createVideo([f.video], () => {
-    video.loop = false
-  }, () => {
-    // error loading video – continue without playback
-  })
-  video.size(width, height)
-  video.position(canvas.position().x, canvas.position().y)
-  video.elt.setAttribute('playsinline', '')
-  video.elt.setAttribute('webkit-playsinline', '')
-  video.show()
-  video.volume(1)
-  video.play()
-
-  filmSession = {
-    spec: f,
-    video,
-    start: millis(),
-    promptVisible: false
-  }
-
-  // schedule prompt after duration
-  setTimeout(() => {
-    if (!filmSession) return
-    filmSession.promptVisible = true
-    showCaption(f.text || '')
-    startTimerUi()
-  }, f.duration || 0)
-}
-
-function renderFilm(){
-  console.log('render film')
-  if (!filmSession) return
-  // ensure video element fits
-  // (already sized to canvasWrap; letting DOM handle it)
-  // when prompt visible, update timer bar
-  if (filmSession.promptVisible){
-    const f = filmSession.spec
-    const elapsed = millis() - (filmSession.start + (f.duration || 0))
-    const dur = f.duration || 0
-    const pct = constrain(elapsed / (f.duration || 0), 0, 1)
-    timerFill.elt.style.width = (pct * 100).toFixed(2) + '%'
-    if (pct >= 1){
-      // TIMEOUT
-      const to = f.timeoutAction
-      // hide video
-      stopAllMedia()
-      hideCaption()
-      if (to) goto(to)
-    }
-  } else {
-    // still in playback period: check if duration elapsed
-    const elapsed = millis() - filmSession.start
-    const dur = filmSession.spec.duration || 0
-    if (elapsed >= dur){
-      // show prompt
-      filmSession.promptVisible = true
-      showCaption(filmSession.spec.text || '')
-      startTimerUi()
-    }
-  }
-}
 
 function mousePressed(){
   // emulate physical click
@@ -352,6 +327,19 @@ function activateHotspot(h){
     activeOverlayVideo = createVideo(h.media.video, ()=>{
       activeOverlayVideo.size(w || 320, hH || 180);
       activeOverlayVideo.play();
+    // update timer UI for film prompt
+    if (filmSession && filmSession.promptVisible && filmSession.duration > 0){
+      const elapsed = millis() - filmSession.start
+      const dur = filmSession.duration
+      const pct = constrain(elapsed / dur, 0, 1)
+      timerFill.elt.style.width = (pct * 100).toFixed(2) + '%'
+      if (pct >= 1){
+        // timeout path for film
+        filmSession.promptVisible = false
+        hideCaption()
+        if (filmSession.spec.timeoutAction) goto(filmSession.spec.timeoutAction)
+      }
+    }
       activeOverlayVideo.hide();
     });
     // Gem params til draw
