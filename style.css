@@ -10,6 +10,21 @@
 
 *{ box-sizing: border-box }
 
+#clickToStartAudio {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,.85);
+  color: white;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  z-index: 1000;
+  font-size: clamp(1rem, 2.5vw, 1.5rem);
+  cursor: pointer;
+}
+
 html, body{
   margin:0;
   padding:0;

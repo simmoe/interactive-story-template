@@ -46,13 +46,14 @@ pages = [
     background: './assets/front.png',
     heading: 'Velkommen til passet',
     button: { text: 'Gå videre', action: '#page2' },
+    backgroundSound: './assets/storm.mp3',
     hotspots: [
       // Månen – foreshadowing + genvej til klimaks-aksen
       {
         type: 'hotspot',
         x: 0.38, y: 0.25, r: 0.08, // 800/1000, 200/1000, 60/750
         text: 'Gå direkte til kælderen',
-        media: { audio: './assets/door.mp3', overlay: './assets/bloodmoon.png' },
+        media: { audio: './assets/doorOhh.mp3', overlay: './assets/bloodmoon.png' },
         duration: 5000,
         action: '#page4',
         meta: { tooltip: 'Kan aktiveres 3 gange', maxActivations: 3 }

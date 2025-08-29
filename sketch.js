@@ -13,7 +13,8 @@ let filmSession = null
 let captionBar, captionText, timerFill, pageHeading, pageButton
 let canvas
 
-let activeAudio = null
+let activeAudio = null // hotspot-lyd
+let activeBackgroundAudio = null // backgroundsound
 let activeOverlayVideo = null; // p5.MediaElement
 let overlayVideoAlpha = 0;
 
@@ -34,6 +35,9 @@ function preload(){
 }
 
 function setup(){
+  select('#clickToStartAudio').mousePressed(() => {
+    select('#clickToStartAudio').hide()
+
   const wrap = select('#canvasWrap')
   const rect = wrap.elt.getBoundingClientRect()
   canvas = createCanvas(rect.width, rect.height)
@@ -41,6 +45,7 @@ function setup(){
 
   setupDomBindings()
   enterPage('#page1')
+  })
 }
 
 function windowResized(){
@@ -87,9 +92,9 @@ function draw(){
       y = percentToPixel(y, 'y')
     }
     if (activeHotspot.r){
-      const w = activeOverlayImg.width
-      const h = activeOverlayImg.height
-      image(activeOverlayImg, x - w/2, y - h/2)
+      const w = percentToPixel(activeHotspot.r * 2, 'x')
+      const h = percentToPixel(activeHotspot.r * 2, 'x')
+      image(activeOverlayImg, x - w/2, y - w/2, w, h)
     } else {
       let w = activeHotspot.w, hH = activeHotspot.h
       if (w && w <= 1) w = w * width
@@ -97,7 +102,7 @@ function draw(){
       image(activeOverlayImg, x, y, w, hH)
     }
     pop();
-    overlayAlpha = lerp(overlayAlpha, 255, 0.08);
+  overlayAlpha = lerp(overlayAlpha, 255, 0.04);
   }
 
   // overlay for active hotspot video
@@ -122,7 +127,6 @@ function draw(){
       }
     }
   }
-
 }
 
 function enterPage(id){
@@ -130,6 +134,16 @@ function enterPage(id){
   activeHotspot = null
   filmSession = null
   overlayAlpha = 0
+  // Stop backgroundsound hvis der er en aktiv
+  if (activeBackgroundAudio) {
+    activeBackgroundAudio.stop()
+    activeBackgroundAudio = null
+  }
+  // Stop hotspot-lyd hvis der er en aktiv
+  if (activeAudio) {
+    activeAudio.stop()
+    activeAudio = null
+  }
   console.log('enterPage:', id, current)
 
   if (current.heading){
@@ -161,6 +175,15 @@ function enterPage(id){
     console.log('Baggrundsbillede loaded:', img)
   })
 
+  // start backgroundsound hvis property findes
+  if (current.backgroundSound) {
+    console.log('forsøger at starte baggrundslyd')
+    activeBackgroundAudio = loadSound(current.backgroundSound, () => {
+      activeBackgroundAudio.setLoop(true)
+      activeBackgroundAudio.play()
+    })
+  }
+
   // start film if present
   if (current.film){
     console.log('Starter film:', current.film)
@@ -181,7 +204,16 @@ function stopAllMedia(){
     try { filmSession.video.remove() } catch(e){}
   }
   filmSession = null
-  // no global audio here
+  // stop backgroundsound hvis der er en aktiv
+  if (activeBackgroundAudio) {
+    activeBackgroundAudio.stop()
+    activeBackgroundAudio = null
+  }
+  // stop hotspot-lyd hvis der er en aktiv
+  if (activeAudio) {
+    activeAudio.stop()
+    activeAudio = null
+  }
 }
 
 function startFilmSession(f){
